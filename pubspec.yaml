@@ -1,0 +1,65 @@
+name: my_world
+description: A private mental wellness app for self-talk and reflection.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.16.0
+  cloud_firestore: ^4.14.0
+  firebase_storage: ^11.6.0
+
+  # State Management
+  flutter_bloc: ^8.1.3
+  equatable: ^2.0.5
+  get_it: ^7.6.4
+
+  # Code Generation
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
+
+  # UI
+  google_fonts: ^6.1.0
+  lottie: ^2.7.0
+
+  # Media
+  image_picker: ^1.0.5
+  photo_view: ^0.14.0
+  cached_network_image: ^3.3.0
+
+  # Storage
+  hive_flutter: ^1.1.0
+  flutter_secure_storage: ^9.0.0
+
+  # Utils
+  intl: ^0.18.1
+  uuid: ^4.3.3
+  share_plus: ^7.2.1
+
+  # Security
+  local_auth: ^2.1.7
+  encrypt: ^5.0.3
+  crypto: ^3.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.7
+  freezed: ^2.4.5
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/animations/
+    - assets/icon/
+    - assets/images/
