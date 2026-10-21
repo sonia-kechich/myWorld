@@ -144,3 +144,27 @@
   justify-content: flex-end;
   flex-shrink: 0;
 }
+
+.vaultbtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  color: var(--tx3);
+  font-size: 15px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+
+.vaultbtn:hover {
+  color: var(--tx2);
+  border-color: var(--b2);
+  transform: translateY(-1px);
+}

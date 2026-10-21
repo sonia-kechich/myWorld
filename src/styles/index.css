@@ -2,6 +2,8 @@
 @import './reflect.css';
 @import './quotes.css';
 @import './game.css';
+@import './auth.css';
+@import './settings.css';
 
 :root {
   --t: 0.35s cubic-bezier(0.4, 0, 0.2, 1);

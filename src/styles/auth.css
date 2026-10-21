@@ -1,0 +1,233 @@
+/* AUTH */
+
+.auth-screen {
+  background: transparent;
+}
+
+.auth-head {
+  padding: 26px 24px 6px;
+  flex-shrink: 0;
+}
+
+.auth-progress {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 15px;
+}
+
+.auth-dot {
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--s2);
+  transition: background var(--t);
+}
+
+.auth-dot.on {
+  background: var(--acc);
+  box-shadow: 0 0 7px rgba(167, 139, 250, 0.45);
+}
+
+.auth-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 30px;
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.15;
+  color: var(--tx);
+}
+
+.auth-sub {
+  font-family: 'Karla', sans-serif;
+  font-size: 13px;
+  color: var(--tx3);
+  margin-top: 7px;
+  line-height: 1.55;
+  font-weight: 300;
+}
+
+.auth-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 24px 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-label {
+  font-family: 'Karla', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tx3);
+  margin: 15px 0 7px;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: 13px;
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  color: var(--tx);
+  font-family: 'Karla', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition:
+    background var(--t),
+    border-color var(--t);
+}
+
+.auth-input:focus {
+  border-color: rgba(167, 139, 250, 0.4);
+  background: var(--s2);
+}
+
+.auth-input::placeholder {
+  color: var(--tx3);
+}
+
+.auth-code {
+  text-align: center;
+  font-size: 19px;
+  letter-spacing: 0.45em;
+  padding-left: 0.45em;
+}
+
+.auth-note {
+  font-family: 'Karla', sans-serif;
+  font-size: 12px;
+  color: var(--tx3);
+  line-height: 1.6;
+  margin-top: 13px;
+  font-weight: 300;
+}
+
+.auth-error {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: rgba(249, 168, 212, 0.09);
+  border: 1px solid rgba(249, 168, 212, 0.22);
+  color: var(--rose);
+  font-family: 'Karla', sans-serif;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.auth-foot {
+  padding: 14px 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  flex-shrink: 0;
+}
+
+.auth-primary {
+  width: 100%;
+  padding: 13px;
+  border-radius: 50px;
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(196, 181, 253, 0.1));
+  border: 1px solid rgba(196, 181, 253, 0.3);
+  color: var(--acc2);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  transition:
+    transform 0.2s,
+    opacity 0.2s;
+}
+
+.auth-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.auth-primary:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.auth-primary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.auth-link {
+  background: none;
+  border: none;
+  color: var(--tx3);
+  font-family: 'Karla', sans-serif;
+  font-size: 12px;
+  text-align: center;
+  padding: 5px;
+  transition: color 0.2s;
+}
+
+.auth-link:hover {
+  color: var(--tx2);
+}
+
+.auth-link-quiet {
+  color: rgba(249, 168, 212, 0.45);
+}
+
+.auth-danger {
+  margin-top: 4px;
+  padding: 12px;
+  border-radius: 13px;
+  background: rgba(249, 168, 212, 0.06);
+  border: 1px solid rgba(249, 168, 212, 0.18);
+}
+
+.auth-danger-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-danger-btn {
+  flex: 1;
+  padding: 9px;
+  border-radius: 11px;
+  background: rgba(249, 168, 212, 0.12);
+  border: 1px solid rgba(249, 168, 212, 0.28);
+  color: var(--rose);
+  font-family: 'Karla', sans-serif;
+  font-size: 12.5px;
+  transition: transform 0.18s;
+}
+
+.auth-danger-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.auth-loading {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* QR + setup key */
+
+.qr-frame {
+  align-self: center;
+  margin: 8px 0 2px;
+  padding: 13px;
+  border-radius: 20px;
+  background: #f4f2ff;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
+}
+
+.setup-key {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+  color: var(--tx);
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  border-radius: 12px;
+  padding: 11px 12px;
+  text-align: center;
+  word-break: break-all;
+  line-height: 1.7;
+}

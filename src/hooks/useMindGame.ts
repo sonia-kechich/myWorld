@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { REFLECTION_QUESTIONS } from '../data';
 import type { GamePhase } from '../types';
+import { writeQuietly, type VaultStore } from '../storage/vaultStore';
 
 export interface UseMindGameResult {
   phase: GamePhase;
@@ -10,11 +11,41 @@ export interface UseMindGameResult {
   next: () => void;
 }
 
-export function useMindGame(onReflectionDone?: () => void): UseMindGameResult {
+export function useMindGame(
+  store: VaultStore | null,
+  onReflectionDone?: () => void,
+): UseMindGameResult {
   const [phase, setPhase] = useState<GamePhase>('q');
   const [index, setIndex] = useState(0);
   const [doneCount, setDoneCount] = useState(0);
+  const doneCountRef = useRef(0);
   const previous = useRef(-1);
+
+  useEffect(() => {
+    if (!store) return;
+
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const saved = await store.get<{ doneCount?: number }>('game', 'game');
+
+        if (cancelled || !saved || typeof saved.doneCount !== 'number') return;
+
+        doneCountRef.current = saved.doneCount;
+        setDoneCount(saved.doneCount);
+      } catch {
+        // Nothing could be read, most likely because the vault was locked
+        // again while it was loading.
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [store]);
 
   const pickNext = useCallback(() => {
     let next = index;
@@ -27,9 +58,12 @@ export function useMindGame(onReflectionDone?: () => void): UseMindGameResult {
 
   const complete = useCallback(() => {
     setPhase('done');
-    setDoneCount((current) => current + 1);
+    const next = doneCountRef.current + 1;
+    doneCountRef.current = next;
+    setDoneCount(next);
+    if (store) writeQuietly(store.put('game', 'game', { doneCount: next }));
     onReflectionDone?.();
-  }, [onReflectionDone]);
+  }, [store, onReflectionDone]);
 
   const next = useCallback(() => {
     pickNext();

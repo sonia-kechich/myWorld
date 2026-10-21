@@ -1,4 +1,4 @@
-export type ScreenId = 'home' | 'reflect' | 'quotes' | 'game';
+export type ScreenId = 'home' | 'reflect' | 'quotes' | 'game' | 'settings';
 
 export type ReflectMode = 'pos' | 'neg';
 

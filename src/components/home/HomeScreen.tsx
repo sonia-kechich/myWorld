@@ -108,6 +108,16 @@ export default function HomeScreen({
           );
         })}
       </div>
+
+      <div className="bottom-bar">
+        <button
+          className="vaultbtn"
+          onClick={() => onNavigate('settings')}
+          aria-label="Vault settings"
+        >
+          <span aria-hidden="true">⚙</span>
+        </button>
+      </div>
     </div>
   );
 }

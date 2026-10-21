@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Quote, QuoteReminder } from '../types';
+import { writeQuietly, type VaultStore } from '../storage/vaultStore';
 
 const SEED_QUOTES: Quote[] = [
   {
@@ -24,46 +25,111 @@ export interface UseQuotesResult {
   toggleReminder: (id: number) => void;
 }
 
-export function useQuotes(onQuoteAdded?: () => void): UseQuotesResult {
-  const [quotes, setQuotes] = useState<Quote[]>(SEED_QUOTES);
+function recordId(id: number): string {
+  return `quote:${id}`;
+}
+
+export function useQuotes(
+  store: VaultStore | null,
+  onQuoteAdded?: () => void,
+): UseQuotesResult {
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const quotesRef = useRef<Quote[]>([]);
+
+  const apply = useCallback((next: Quote[]) => {
+    quotesRef.current = next;
+    setQuotes(next);
+  }, []);
+
+  useEffect(() => {
+    if (!store) return;
+
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const { items } = await store.list<Quote>('quote');
+
+        if (cancelled) return;
+
+        if (items.length === 0) {
+          for (const seed of SEED_QUOTES) {
+            await store.put('quote', recordId(seed.id), seed);
+          }
+          if (!cancelled) apply(SEED_QUOTES);
+          return;
+        }
+
+        apply(items.map((item) => item.value));
+      } catch {
+        // Nothing could be read, most likely because the vault was locked
+        // again while it was loading.
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [store, apply]);
 
   const addQuote = useCallback(
     (text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
-      setQuotes((current) => [
-        ...current,
-        {
-          id: Date.now(),
-          text: trimmed,
-          reminder: null,
-          active: false,
-        },
-      ]);
+
+      const quote: Quote = {
+        id: Date.now(),
+        text: trimmed,
+        reminder: null,
+        active: false,
+      };
+
+      apply([...quotesRef.current, quote]);
+      if (store) writeQuietly(store.put('quote', recordId(quote.id), quote));
       onQuoteAdded?.();
     },
-    [onQuoteAdded],
+    [store, apply, onQuoteAdded],
   );
 
-  const deleteQuote = useCallback((id: number) => {
-    setQuotes((current) => current.filter((quote) => quote.id !== id));
-  }, []);
+  const deleteQuote = useCallback(
+    (id: number) => {
+      apply(quotesRef.current.filter((quote) => quote.id !== id));
+      if (store) writeQuietly(store.remove('quote', recordId(id)));
+    },
+    [store, apply],
+  );
 
-  const saveReminder = useCallback((id: number, reminder: QuoteReminder) => {
-    setQuotes((current) =>
-      current.map((quote) =>
-        quote.id === id ? { ...quote, reminder, active: true } : quote,
-      ),
-    );
-  }, []);
+  const update = useCallback(
+    (id: number, change: (quote: Quote) => Quote) => {
+      const next = quotesRef.current.map((quote) =>
+        quote.id === id ? change(quote) : quote,
+      );
 
-  const toggleReminder = useCallback((id: number) => {
-    setQuotes((current) =>
-      current.map((quote) =>
-        quote.id === id ? { ...quote, active: !quote.active } : quote,
-      ),
-    );
-  }, []);
+      apply(next);
+
+      const updated = next.find((quote) => quote.id === id);
+      if (updated && store) {
+        writeQuietly(store.put('quote', recordId(id), updated));
+      }
+    },
+    [store, apply],
+  );
+
+  const saveReminder = useCallback(
+    (id: number, reminder: QuoteReminder) => {
+      update(id, (quote) => ({ ...quote, reminder, active: true }));
+    },
+    [update],
+  );
+
+  const toggleReminder = useCallback(
+    (id: number) => {
+      update(id, (quote) => ({ ...quote, active: !quote.active }));
+    },
+    [update],
+  );
 
   return useMemo(
     () => ({ quotes, addQuote, deleteQuote, saveReminder, toggleReminder }),
