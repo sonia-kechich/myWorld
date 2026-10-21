@@ -1,0 +1,186 @@
+/* QUOTES */
+
+.qlist {
+  flex: 1;
+  overflow-y: auto;
+  padding: 11px 13px;
+}
+
+.qcard {
+  margin-bottom: 9px;
+  padding: 13px 14px;
+  border-radius: 15px;
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  animation: slideIn 0.3s ease both;
+  transition:
+    transform 0.2s,
+    background var(--t),
+    border-color var(--t);
+}
+
+.qcard:hover {
+  transform: translateY(-1px);
+}
+
+.qtxt {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--tx);
+  margin-bottom: 9px;
+}
+
+.qactions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.bell {
+  padding: 5px 9px;
+  border-radius: 9px;
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  font-family: 'Karla', sans-serif;
+  font-size: 11px;
+  color: var(--tx3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.18s;
+}
+
+.bell.on {
+  background: rgba(134, 239, 172, 0.09);
+  border-color: rgba(134, 239, 172, 0.28);
+  color: var(--green);
+}
+
+.qdel {
+  margin-left: auto;
+  color: var(--tx3);
+  font-size: 13px;
+  transition: color 0.18s;
+}
+
+.qdel:hover {
+  color: var(--rose);
+}
+
+.tpick {
+  margin-top: 9px;
+  padding: 11px 13px;
+  border-radius: 11px;
+  background: var(--s2);
+  border: 1px solid var(--b1);
+}
+
+.tprow {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-bottom: 9px;
+}
+
+.tplbl {
+  font-size: 11px;
+  color: var(--tx3);
+  font-family: 'Karla', sans-serif;
+  width: 40px;
+}
+
+.tpin,
+.tpsel {
+  background: var(--s1);
+  border: 1px solid var(--b2);
+  border-radius: 7px;
+  padding: 4px 8px;
+  color: var(--tx);
+  font-family: 'Karla', sans-serif;
+  font-size: 12px;
+  outline: none;
+  transition:
+    background var(--t),
+    color var(--t);
+}
+
+.tpsel option {
+  background: var(--bg);
+}
+
+.tpbtns {
+  display: flex;
+  gap: 7px;
+}
+
+.tpsave {
+  flex: 1;
+  padding: 6px;
+  border-radius: 9px;
+  background: rgba(134, 239, 172, 0.16);
+  border: 1px solid rgba(134, 239, 172, 0.28);
+  color: var(--green);
+  font-family: 'Karla', sans-serif;
+  font-size: 12px;
+}
+
+.tpcancel {
+  flex: 1;
+  padding: 6px;
+  border-radius: 9px;
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  color: var(--tx3);
+  font-family: 'Karla', sans-serif;
+  font-size: 12px;
+}
+
+.qin-area {
+  padding: 9px 13px 20px;
+  border-top: 1px solid var(--b1);
+  flex-shrink: 0;
+}
+
+.qta {
+  width: 100%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  background: rgba(134, 239, 172, 0.04);
+  border: 1px solid rgba(134, 239, 172, 0.1);
+  color: var(--tx);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  outline: none;
+  resize: none;
+  line-height: 1.55;
+  margin-bottom: 7px;
+  transition:
+    background var(--t),
+    color var(--t);
+}
+
+.qta::placeholder {
+  color: var(--tx3);
+}
+
+.qsave {
+  width: 100%;
+  padding: 9px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, rgba(134, 239, 172, 0.18), rgba(134, 239, 172, 0.06));
+  border: 1px solid rgba(134, 239, 172, 0.25);
+  color: var(--green);
+  font-family: 'Karla', sans-serif;
+  font-size: 13px;
+  transition: transform 0.18s;
+}
+
+.qsave:hover {
+  transform: translateY(-1px);
+}
+
+.qsave:active {
+  transform: scale(0.97);
+}

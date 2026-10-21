@@ -1,0 +1,148 @@
+/* MIND GAME */
+
+.game-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 26px;
+}
+
+.gorn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(249, 168, 212, 0.12), rgba(196, 181, 253, 0.08));
+  border: 1px solid rgba(249, 168, 212, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  color: rgba(249, 168, 212, 0.7);
+  box-shadow: 0 0 28px rgba(249, 168, 212, 0.09);
+  margin-bottom: 26px;
+}
+
+.gq {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  font-style: italic;
+  font-size: 21px;
+  line-height: 1.55;
+  color: var(--tx);
+  text-align: center;
+  margin-bottom: 9px;
+}
+
+.gh {
+  font-family: 'Karla', sans-serif;
+  font-size: 12px;
+  color: var(--tx3);
+  text-align: center;
+  margin-bottom: 38px;
+}
+
+.bring {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  border: 1px solid rgba(249, 168, 212, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 38px;
+  animation: breathe 5s ease-in-out infinite;
+}
+
+.binner {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid rgba(249, 168, 212, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: breathe 5s ease-in-out infinite 0.5s;
+}
+
+.bcore {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(249, 168, 212, 0.07);
+  animation: breathe 5s ease-in-out infinite 1s;
+}
+
+.donebtn {
+  padding: 14px 44px;
+  border-radius: 50px;
+  background: linear-gradient(135deg, rgba(249, 168, 212, 0.16), rgba(196, 181, 253, 0.1));
+  border: 1px solid rgba(249, 168, 212, 0.28);
+  color: var(--tx);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  transition: transform 0.2s;
+}
+
+.donebtn:hover {
+  transform: scale(1.04);
+}
+
+.donebtn:active {
+  transform: scale(0.95);
+}
+
+.donecard {
+  text-align: center;
+  animation: qFade 0.45s ease both;
+}
+
+.dstar {
+  font-size: 44px;
+  margin-bottom: 16px;
+}
+
+.dtitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 21px;
+  color: var(--tx);
+  font-style: italic;
+  margin-bottom: 7px;
+}
+
+.dxp {
+  font-family: 'Karla', sans-serif;
+  font-size: 13px;
+  color: var(--tx3);
+  margin-bottom: 38px;
+}
+
+.nextbtn {
+  padding: 12px 32px;
+  border-radius: 50px;
+  background: linear-gradient(135deg, rgba(196, 181, 253, 0.16), rgba(167, 139, 250, 0.08));
+  border: 1px solid rgba(196, 181, 253, 0.28);
+  color: var(--acc2);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  transition: transform 0.2s;
+}
+
+.nextbtn:hover {
+  transform: scale(1.04);
+}
+
+.nextbtn:active {
+  transform: scale(0.95);
+}
+
+.qwrap {
+  width: 100%;
+  text-align: center;
+  animation: qFade 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}

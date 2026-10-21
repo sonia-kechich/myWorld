@@ -1,0 +1,262 @@
+@import './home.css';
+@import './reflect.css';
+@import './quotes.css';
+@import './game.css';
+
+:root {
+  --t: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme='dark'] {
+  --bg: #12121f;
+  --bg2: #1a1a2e;
+  --phone: rgba(18, 18, 32, 0.96);
+  --s1: rgba(255, 255, 255, 0.06);
+  --s2: rgba(255, 255, 255, 0.11);
+  --b1: rgba(255, 255, 255, 0.1);
+  --b2: rgba(255, 255, 255, 0.18);
+  --tx: rgba(255, 255, 255, 0.9);
+  --tx2: rgba(255, 255, 255, 0.55);
+  --tx3: rgba(255, 255, 255, 0.3);
+  --acc: #a78bfa;
+  --acc2: #c4b5fd;
+  --blue: #7dd3fc;
+  --rose: #f9a8d4;
+  --green: #86efac;
+  --gold: #fcd34d;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: linear-gradient(140deg, var(--bg) 0%, var(--bg2) 55%, var(--bg) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--t);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  color: inherit;
+}
+
+textarea,
+input,
+select {
+  font-family: 'Karla', sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--b1);
+  border-radius: 4px;
+}
+
+/* ── Stars ─────────────────────────────────────────────── */
+
+.stars {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity var(--t);
+}
+
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: white;
+  animation: twinkle var(--dur) ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.4);
+  }
+}
+
+/* ── Phone shell ───────────────────────────────────────── */
+
+.phone {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100vw);
+  height: min(800px, 100vh);
+  background: var(--phone);
+  backdrop-filter: blur(20px);
+  border-radius: min(38px, 0px);
+  border: 1px solid var(--b1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow:
+    0 0 80px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition:
+    background var(--t),
+    border-color var(--t);
+}
+
+/* ── Screen + shared header ────────────────────────────── */
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  animation: fadeUp 0.38s ease both;
+  overflow: hidden;
+}
+
+.screen.hidden {
+  display: none !important;
+}
+
+.sh {
+  padding: 15px 18px 11px;
+  border-bottom: 1px solid var(--b1);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex-shrink: 0;
+  transition: border-color var(--t);
+}
+
+.back {
+  color: var(--tx3);
+  font-size: 20px;
+  padding: 2px 6px;
+  transition: color 0.2s;
+}
+
+.back:hover {
+  color: var(--tx2);
+}
+
+.sh-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.sh-sub {
+  font-family: 'Karla', sans-serif;
+  font-size: 11px;
+  color: var(--tx3);
+  margin-top: 1px;
+}
+
+.lbl {
+  font-family: 'Karla', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+
+/* ── Animations ────────────────────────────────────────── */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bubbleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideR {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 1;
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.07);
+    opacity: 1;
+  }
+}
+
+@keyframes qFade {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
