@@ -9,11 +9,22 @@ import {
 } from 'react';
 import { hasSubtleCrypto } from '../crypto/keys';
 import { migrateVault } from '../storage/migrate';
+import { requestPersistentStorage } from '../storage/persistence';
 import type { VaultStore } from '../storage/vaultStore';
-import { parseVaultFile, type VaultFile } from '../backup/vaultFile';
+import {
+  parsePortableBackup,
+  type PortableBackup,
+} from '../backup/portableBackup';
+import type { ImportMode, ImportPlan } from '../backup/importPlan';
 import { DEFAULT_AUTO_LOCK_MINUTES } from './constants';
 import { createInactivityTimer } from './inactivity';
-import { vaultService, type SetupSession } from './vaultService';
+import {
+  vaultService,
+  type ImportResult,
+  type PortableExport,
+  type SetupSession,
+} from './vaultService';
+import { LEGACY_COPY_ID } from './vaultService';
 
 export type VaultPhase = 'checking' | 'unconfigured' | 'locked' | 'unlocked';
 
@@ -27,12 +38,15 @@ export interface VaultContextValue {
   unlock: (password: string, code: string) => Promise<void>;
   unlockWithRecoveryKey: (password: string, key: string) => Promise<void>;
   lock: () => void;
-  logout: () => void;
   resetVault: () => Promise<void>;
   saveAutoLockMinutes: (minutes: number) => Promise<void>;
   readLockoutRemaining: () => Promise<number>;
-  exportBackup: () => Promise<VaultFile>;
-  importBackup: (file: VaultFile, password: string) => Promise<number>;
+  exportPortable: (password: string) => Promise<PortableExport>;
+  prepareImport: (backup: PortableBackup, password: string) => Promise<ImportPlan>;
+  applyImport: (plan: ImportPlan, mode: ImportMode) => Promise<ImportResult>;
+  undoLastImport: () => Promise<number>;
+  hasLegacyCopy: () => Promise<boolean>;
+  eraseLegacyCopy: () => Promise<void>;
 }
 
 const VaultContext = createContext<VaultContextValue | null>(null);
@@ -69,10 +83,21 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         );
       }
 
-      const status = await vaultService.getStatus();
-      if (cancelled) return;
+      try {
+        const status = await vaultService.getStatus();
+        if (cancelled) return;
 
-      setPhase(status === 'unconfigured' ? 'unconfigured' : 'locked');
+        setPhase(status === 'unconfigured' ? 'unconfigured' : 'locked');
+      } catch {
+        // The vault could not be read at all. The app says so instead of
+        // staying on the loading screen for ever.
+        if (cancelled) return;
+
+        setStartupError(
+          'Your vault could not be opened. Reload the page and try again.',
+        );
+        setPhase('locked');
+      }
     };
 
     void detect();
@@ -85,12 +110,32 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const openStore = useCallback(async () => {
     const next = vaultService.store();
 
-    await migrateVault(next);
+    // A single damaged record must never keep the vault closed for good. The
+    // migration is plain and is tried again on the next unlock.
+    try {
+      await migrateVault(next);
+    } catch {
+      // The store is opened anyway, the data is still where it was.
+    }
 
-    const settings = await next.get<SettingsRecord>('settings', 'settings');
-    setAutoLockMinutes(settings?.autoLockMinutes ?? DEFAULT_AUTO_LOCK_MINUTES);
+    let minutes = DEFAULT_AUTO_LOCK_MINUTES;
+
+    try {
+      const settings = await next.get<SettingsRecord>('settings', 'settings');
+      if (Number.isFinite(settings?.autoLockMinutes)) {
+        minutes = settings?.autoLockMinutes ?? DEFAULT_AUTO_LOCK_MINUTES;
+      }
+    } catch {
+      // The settings are damaged, the default lock time is used instead.
+    }
+
+    setAutoLockMinutes(minutes);
     setStore(next);
     setPhase('unlocked');
+
+    // Ask the browser to keep the database, so it is not cleared when the
+    // device runs low on space. A refusal changes nothing that the app does.
+    void requestPersistentStorage();
   }, []);
 
   const beginSetup = useCallback(
@@ -128,12 +173,6 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     setPhase('locked');
   }, []);
 
-  const logout = useCallback(() => {
-    vaultService.lock();
-    setStore(null);
-    setPhase('locked');
-  }, []);
-
   const resetVault = useCallback(async () => {
     await vaultService.resetVault();
     setStore(null);
@@ -142,34 +181,76 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
   const saveAutoLockMinutes = useCallback(
     async (minutes: number) => {
-      setAutoLockMinutes(minutes);
+      if (!store) {
+        setAutoLockMinutes(minutes);
+        return;
+      }
 
-      if (!store) return;
+      let settings: SettingsRecord = {
+        schemaVersion: 1,
+        autoLockMinutes: minutes,
+      };
 
-      const settings =
-        (await store.get<SettingsRecord>('settings', 'settings')) ??
-        ({ schemaVersion: 1, autoLockMinutes: minutes } satisfies SettingsRecord);
+      try {
+        const stored = await store.get<SettingsRecord>('settings', 'settings');
+        if (stored) settings = stored;
+      } catch {
+        // The settings are damaged, they are written again from scratch.
+      }
 
       await store.put('settings', 'settings', {
         ...settings,
         autoLockMinutes: minutes,
       });
+
+      // The new time is only shown once it is really written, so the screen
+      // never promises something that did not happen.
+      setAutoLockMinutes(minutes);
     },
     [store],
   );
 
-  const exportBackup = useCallback(() => vaultService.exportBackup(), []);
+  const exportPortable = useCallback(
+    (password: string) => vaultService.exportPortable(password),
+    [],
+  );
 
   const readLockoutRemaining = useCallback(
     () => vaultService.readLockoutRemaining(),
     [],
   );
 
-  const importBackup = useCallback(async (file: VaultFile, password: string) => {
-    const count = await vaultService.importBackup(file, password);
+  const prepareImport = useCallback(
+    (backup: PortableBackup, password: string) =>
+      vaultService.prepareImport(backup, password),
+    [],
+  );
+
+  const applyImport = useCallback(
+    async (plan: ImportPlan, mode: ImportMode) => {
+      const result = await vaultService.applyImport(plan, mode);
+      await openStore();
+      return result;
+    },
+    [openStore],
+  );
+
+  const undoLastImport = useCallback(async () => {
+    const count = await vaultService.undoLastImport();
     await openStore();
     return count;
   }, [openStore]);
+
+  const hasLegacyCopy = useCallback(async () => {
+    if (!store) return false;
+    const copy = await store.get('legacy', LEGACY_COPY_ID);
+    return copy !== null;
+  }, [store]);
+
+  const eraseLegacyCopy = useCallback(async () => {
+    if (!store) return;
+    await store.remove('legacy', LEGACY_COPY_ID);
+  }, [store]);
 
   useEffect(() => {
     if (phase !== 'unlocked' || autoLockMinutes <= 0) return;
@@ -219,12 +300,15 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       unlock,
       unlockWithRecoveryKey,
       lock,
-      logout,
       resetVault,
       saveAutoLockMinutes,
       readLockoutRemaining,
-      exportBackup,
-      importBackup,
+      exportPortable,
+      prepareImport,
+      applyImport,
+      undoLastImport,
+      hasLegacyCopy,
+      eraseLegacyCopy,
     }),
     [
       phase,
@@ -236,16 +320,19 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       unlock,
       unlockWithRecoveryKey,
       lock,
-      logout,
       resetVault,
       saveAutoLockMinutes,
       readLockoutRemaining,
-      exportBackup,
-      importBackup,
+      exportPortable,
+      prepareImport,
+      applyImport,
+      undoLastImport,
+      hasLegacyCopy,
+      eraseLegacyCopy,
     ],
   );
 
   return <VaultContext.Provider value={value}>{children}</VaultContext.Provider>;
 }
 
-export { parseVaultFile };
+export { parsePortableBackup };

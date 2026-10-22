@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">myWorld</string>
+    <string name="title_activity_main">myWorld</string>
+    <string name="package_name">com.myworld.app</string>
+    <string name="custom_url_scheme">com.myworld.app</string>
+</resources>

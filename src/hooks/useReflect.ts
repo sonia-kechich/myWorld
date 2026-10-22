@@ -26,6 +26,35 @@ export interface UseReflectResult {
   moodPercent: number;
 }
 
+/** A message that can be shown. */
+function isReflectMessage(value: unknown): value is ReflectMessage {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const candidate = value as Partial<ReflectMessage>;
+
+  return (
+    typeof candidate.id === 'number' &&
+    Number.isSafeInteger(candidate.id) &&
+    candidate.id >= 0 &&
+    typeof candidate.text === 'string' &&
+    (candidate.mode === 'pos' || candidate.mode === 'neg')
+  );
+}
+
+/**
+ * The id of the next message. The ids are counted with a loop, a long list of
+ * messages must not blow the stack, and only ids that are real numbers count.
+ */
+export function nextMessageId(messages: ReflectMessage[]): number {
+  let highest = 0;
+
+  for (const message of messages) {
+    if (message.id > highest) highest = message.id;
+  }
+
+  return highest + 1;
+}
+
 export function useReflect(
   store: VaultStore | null,
   onMessageSent?: () => void,
@@ -81,18 +110,21 @@ export function useReflect(
         if (cancelled || !saved) return;
 
         const savedMessages = Array.isArray(saved.messages) ? saved.messages : [];
+        const messages = savedMessages.filter(isReflectMessage);
         const mode = saved.mode === 'neg' ? 'neg' : 'pos';
+
+        // The counters are counted from the messages, so they always match
+        // what is on the screen. The greeting counts as one positive message.
         const posCount =
-          typeof saved.posCount === 'number' ? saved.posCount : 1;
-        const totalCount =
-          typeof saved.totalCount === 'number' ? saved.totalCount : 1;
+          1 + messages.filter((message) => message.mode === 'pos').length;
+        const totalCount = 1 + messages.length;
 
-        stateRef.current = { mode, messages: savedMessages, posCount, totalCount };
+        stateRef.current = { mode, messages, posCount, totalCount };
 
-        if (savedMessages.length > 0) {
-          nextId.current =
-            Math.max(...savedMessages.map((message) => message.id)) + 1;
-          setMessages([GREETING, ...savedMessages]);
+        nextId.current = nextMessageId(messages);
+
+        if (messages.length > 0) {
+          setMessages([GREETING, ...messages]);
         }
 
         setModeState(mode);
@@ -168,6 +200,6 @@ export function useReflect(
       send,
       moodPercent,
     }),
-    [mode, messages, typing, draft, send, moodPercent],
+    [mode, messages, typing, draft, setMode, send, moodPercent],
   );
 }

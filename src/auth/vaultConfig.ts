@@ -4,6 +4,16 @@ import { isEnvelope } from '../crypto/envelope';
 export const VAULT_CONFIG_META = 'vault';
 export const VAULT_CONFIG_VERSION = 1;
 export const LOCKOUT_META = 'lockout';
+/**
+ * Marks that the quotes the app starts with have been written. Without it the
+ * two quotes would come back every time the user removed all of their own.
+ */
+export const SEED_META = 'seeds';
+
+/** Record id of the encrypted copy of the old, unprotected data. */
+export const LEGACY_COPY_ID = 'legacy:copy';
+/** Record id of the encrypted copy taken before a restore replaced the vault. */
+export const RECOVERY_COPY_ID = 'backup:latest';
 
 export const VERIFIER_MARKER = 'myworld.vault.verifier.v1';
 export const VERIFIER_AAD = 'myworld|verifier|v1';

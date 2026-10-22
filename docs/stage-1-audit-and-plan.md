@@ -1,5 +1,11 @@
 # myWorld — Stage 1: Audit & Local-First Architecture Plan
 
+> **Historical document.** This was written before Stage 2 and describes the
+> app as it was then: no persistence, no vault, no tests, no lint. It is kept
+> as the record of that audit and of the plan that followed it. For the current
+> state of the app read `docs/SECURITY.md`, `docs/PRIVACY-AUDIT.md` and
+> `docs/MOBILE-PACKAGING.md`.
+
 Status: **review requested — nothing implemented yet**
 Branch: `feat/stage-1-local-first` (baseline `main` @ `4c35664`)
 Scope: audit of the real source, assessment of the Vault-Note reference, and a staged plan for password-gated, encrypted, device-only storage.

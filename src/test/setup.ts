@@ -21,3 +21,21 @@ if (typeof globalThis.structuredClone !== 'function') {
   globalThis.structuredClone = (value: unknown) =>
     JSON.parse(JSON.stringify(value)) as unknown;
 }
+
+// jsdom has no object urls, the download helper needs one to hand the file
+// to the browser.
+if (typeof URL.createObjectURL !== 'function') {
+  Object.defineProperty(URL, 'createObjectURL', {
+    value: () => 'blob:myworld/test',
+    configurable: true,
+    writable: true,
+  });
+}
+
+if (typeof URL.revokeObjectURL !== 'function') {
+  Object.defineProperty(URL, 'revokeObjectURL', {
+    value: () => undefined,
+    configurable: true,
+    writable: true,
+  });
+}

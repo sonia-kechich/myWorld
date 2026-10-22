@@ -8,10 +8,16 @@ import {
   hasSubtleCrypto,
   serializeKdf,
 } from '../crypto/keys';
-import { getMeta, setMeta, listRecords, deleteRecord, putRecord } from '../storage/records';
+import { getMeta, setMeta, type RecordKind, type UnreadableRecord } from '../storage/records';
 import { deleteDatabase } from '../storage/db';
-import { VaultStore } from '../storage/vaultStore';
-import { buildVaultFile, type VaultFile } from '../backup/vaultFile';
+import { VaultStore, type StoreEntry } from '../storage/vaultStore';
+import {
+  buildPortableBackup,
+  decryptPortableBackup,
+  type PortableBackup,
+  type PortablePlainRecord,
+} from '../backup/portableBackup';
+import { buildImportPlan, type ImportMode, type ImportPlan } from '../backup/importPlan';
 import {
   checkAuthenticatorCode,
   createAuthenticatorProfile,
@@ -35,8 +41,10 @@ import {
 } from './lockout';
 import {
   AUTHENTICATOR_AAD,
+  LEGACY_COPY_ID,
   LOCKOUT_META,
   parseVaultConfig,
+  RECOVERY_COPY_ID,
   VAULT_CONFIG_META,
   VAULT_CONFIG_VERSION,
   VERIFIER_AAD,
@@ -59,7 +67,56 @@ export type VaultErrorCode =
   | 'not-configured'
   | 'corrupt-vault'
   | 'no-key'
+  | 'no-recovery-copy'
   | 'unsupported-environment';
+
+/** The kinds of records that belong to the user and travel in a backup. */
+export const USER_KINDS: RecordKind[] = [
+  'settings',
+  'progress',
+  'reflect',
+  'game',
+  'quote',
+  'entry',
+];
+
+/** Where the copy of the vault is kept that a restore can be undone with. */
+export { RECOVERY_COPY_ID, LEGACY_COPY_ID };
+
+export interface ImportResult {
+  mode: ImportMode;
+  /** Records that were written. */
+  imported: number;
+  /** Records that were kept because the vault already had a newer one. */
+  kept: number;
+  /** Records that were removed by a replace. */
+  replaced: number;
+  /** Whether a copy of the previous content was kept inside the vault. */
+  recoveryCopy: boolean;
+  /**
+   * Records that could not be read and were removed by a replace. They were
+   * never readable, so no copy of them could be kept either.
+   */
+  unreadableRemoved: number;
+}
+
+/** The backup file and what the vault holds that is not in it. */
+export interface PortableExport {
+  backup: PortableBackup;
+  /** Records of the vault that could not be read. They are not in the file. */
+  unreadable: UnreadableRecord[];
+}
+
+export interface RecoveryCopy {
+  createdAt: number;
+  records: Array<{
+    id: string;
+    kind: RecordKind;
+    createdAt: number;
+    updatedAt: number;
+    value: unknown;
+  }>;
+}
 
 export class VaultError extends Error {
   readonly code: VaultErrorCode;
@@ -277,88 +334,199 @@ export class VaultService {
   }
 
   /**
-   * Builds a portable backup. The file only ever contains ciphertext plus the
-   * key derivation parameters, so it stays unreadable without the password.
+   * Builds the portable backup the user takes away from the device.
+   *
+   * The file holds every private record, encrypted with a key derived from
+   * the backup password the user picked for it. It never contains the vault
+   * password, the vault key, the authenticator secret or a verification code.
+   *
+   * Records that cannot be read are not in the file. They are named in
+   * `unreadable`, so the caller can tell the user that the backup does not
+   * hold everything.
    */
-  async exportBackup(): Promise<VaultFile> {
-    const config = await this.readConfig();
-    if (!config) {
-      throw new VaultError(
-        'not-configured',
-        'There is no vault on this device yet. Create one to continue.',
-      );
-    }
+  async exportPortable(
+    password: string,
+    options: { iterations?: number } = {},
+  ): Promise<PortableExport> {
+    this.requireKey();
 
-    const records = await listRecords();
-    return buildVaultFile(
-      config.kdf,
-      config.verifier,
-      {
-        label: config.authenticator.label,
-        issuer: config.authenticator.issuer,
-        secret: config.authenticator.secret,
-      },
-      records,
-      this.now(),
-    );
+    const store = this.store();
+    const { entries, unreadable } = await store.exportValues(USER_KINDS);
+
+    const records: PortablePlainRecord[] = entries.map((entry) => ({
+      id: entry.id,
+      kind: entry.kind,
+      createdAt: entry.createdAt ?? 0,
+      updatedAt: entry.updatedAt ?? 0,
+      value: entry.value,
+    }));
+
+    const backup = await buildPortableBackup(records, password, {
+      iterations: options.iterations,
+      now: () => this.now(),
+    });
+
+    return { backup, unreadable };
   }
 
   /**
-   * Restores a backup. The backup replaces the vault on this device: the
-   * password is checked against the file, every record is decrypted to prove
-   * the file is intact, and only then is anything written.
+   * Opens a backup and works out what it would change, without writing
+   * anything. The user sees this plan before deciding what to do.
    */
-  async importBackup(file: VaultFile, password: string): Promise<number> {
-    const salt = base64ToBytes(file.kdf.salt);
-    const key = await deriveVaultKey(password, salt, file.kdf.iterations);
+  async prepareImport(backup: PortableBackup, password: string): Promise<ImportPlan> {
+    this.requireKey();
 
-    try {
-      const payload = await decryptJson<VerifierPayload>(key, file.verifier, VERIFIER_AAD);
-      if (payload?.marker !== VERIFIER_MARKER) throw new Error('bad marker');
-    } catch {
+    const { manifest, records } = await decryptPortableBackup(backup, password);
+    const { entries: existing, unreadable } = await this.store().exportValues(
+      USER_KINDS,
+    );
+
+    return buildImportPlan(records, {
+      createdAt: manifest.exportedAt,
+      existingIds: existing.map((record) => record.id),
+      existingCount: existing.length + unreadable.length,
+      unreadable,
+      now: this.now(),
+    });
+  }
+
+  /**
+   * Writes the plan into the vault. Either everything lands or nothing does,
+   * and a copy of the previous content is kept so a replace can be undone.
+   */
+  async applyImport(plan: ImportPlan, mode: ImportMode): Promise<ImportResult> {
+    this.requireKey();
+
+    const store = this.store();
+    const { entries: existing, unreadable } = await store.exportValues(USER_KINDS);
+
+    if (mode === 'merge') {
+      const merged = new Map<string, StoreEntry>();
+      for (const entry of existing) merged.set(`${entry.kind}:${entry.id}`, entry);
+
+      let imported = 0;
+      let kept = 0;
+
+      for (const record of plan.records) {
+        const key = `${record.kind}:${record.id}`;
+        const current = merged.get(key);
+
+        if (current && (current.updatedAt ?? 0) > record.updatedAt) {
+          kept += 1;
+          continue;
+        }
+
+        merged.set(key, {
+          kind: record.kind,
+          id: record.id,
+          value: record.value,
+          createdAt: record.createdAt,
+          updatedAt: record.updatedAt,
+        });
+        imported += 1;
+      }
+
+      await store.putMany(Array.from(merged.values()));
+
+      return {
+        mode,
+        imported,
+        kept,
+        replaced: 0,
+        recoveryCopy: false,
+        unreadableRemoved: 0,
+      };
+    }
+
+    const recoveryCopy = await this.createRecoveryCopy(existing);
+    const legacy = await store.get<unknown>('legacy', LEGACY_COPY_ID);
+
+    const entries: StoreEntry[] = [
+      ...plan.records.map((record) => ({
+        kind: record.kind,
+        id: record.id,
+        value: record.value,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      })),
+      recoveryCopy,
+    ];
+
+    if (legacy) {
+      entries.push({ kind: 'legacy', id: LEGACY_COPY_ID, value: legacy });
+    }
+
+    await store.replaceAll(entries);
+
+    return {
+      mode,
+      imported: plan.records.length,
+      kept: 0,
+      replaced: existing.length + unreadable.length,
+      recoveryCopy: true,
+      unreadableRemoved: unreadable.length,
+    };
+  }
+
+  /**
+   * Puts back the content that was there before the last restore.
+   */
+  async undoLastImport(): Promise<number> {
+    this.requireKey();
+
+    const store = this.store();
+    const snapshot = await store.get<RecoveryCopy>('backup', RECOVERY_COPY_ID);
+
+    if (!snapshot || !Array.isArray(snapshot.records)) {
       throw new VaultError(
-        'incorrect-password',
-        'That password is not right for this backup.',
+        'no-recovery-copy',
+        'There is no recovery copy to put back.',
       );
     }
 
-    for (const record of file.records) {
-      try {
-        await decryptJson(key, record.envelope, VaultStore.aad(record.kind, record.id));
-      } catch {
-        throw new VaultError(
-          'corrupt-vault',
-          'That backup is damaged and cannot be restored.',
-        );
-      }
+    const entries: StoreEntry[] = snapshot.records.map((record) => ({
+      kind: record.kind,
+      id: record.id,
+      value: record.value,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    }));
+
+    const legacy = await store.get<unknown>('legacy', LEGACY_COPY_ID);
+    if (legacy) {
+      entries.push({ kind: 'legacy', id: LEGACY_COPY_ID, value: legacy });
     }
 
-    for (const record of await listRecords()) {
-      await deleteRecord(record.id);
-    }
+    await store.replaceAll(entries);
 
-    for (const record of file.records) {
-      await putRecord(record);
-    }
+    return snapshot.records.length;
+  }
 
-    const config: VaultConfig = {
-      name: VAULT_CONFIG_META,
-      version: VAULT_CONFIG_VERSION,
-      createdAt: file.exportedAt,
-      kdf: file.kdf,
-      authenticator: {
-        label: file.authenticator.label,
-        issuer: file.authenticator.issuer,
-        secret: file.authenticator.secret,
-      },
-      verifier: file.verifier,
+  /**
+   * Keeps the current content encrypted inside the vault, so a destructive
+   * restore can be taken back.
+   */
+  private async createRecoveryCopy(entries: StoreEntry[]): Promise<StoreEntry> {
+    return {
+      kind: 'backup',
+      id: RECOVERY_COPY_ID,
+      value: {
+        createdAt: this.now(),
+        records: entries.map((entry) => ({
+          id: entry.id,
+          kind: entry.kind,
+          createdAt: entry.createdAt ?? 0,
+          updatedAt: entry.updatedAt ?? 0,
+          value: entry.value,
+        })),
+      } satisfies RecoveryCopy,
     };
+  }
 
-    await setMeta(VAULT_CONFIG_META, config);
-    await setMeta(LOCKOUT_META, clearLockout());
-    this.key = key;
-
-    return file.records.length;
+  private requireKey(): void {
+    if (!this.key) {
+      throw new VaultError('no-key', 'The vault is locked.');
+    }
   }
 
   private async derive(

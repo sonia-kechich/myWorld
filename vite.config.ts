@@ -6,8 +6,8 @@ import react from '@vitejs/plugin-react';
  * production build, because the dev server needs inline scripts and a websocket
  * to hot reload.
  *
- * The app never talks to a server: everything stays on the device. The only
- * external origin left is the font stylesheet that was already in the design.
+ * The app never talks to a server: everything stays on the device, the fonts
+ * included.
  */
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
@@ -16,8 +16,8 @@ const CONTENT_SECURITY_POLICY = [
   "frame-ancestors 'none'",
   "form-action 'none'",
   "script-src 'self'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self'",
   "img-src 'self' data:",
   "connect-src 'self'",
   "manifest-src 'self'",

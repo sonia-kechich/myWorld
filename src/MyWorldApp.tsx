@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useVault } from './auth/VaultProvider';
 import HomeScreen from './components/home/HomeScreen';
 import ReflectScreen from './components/reflect/ReflectScreen';
@@ -9,6 +9,7 @@ import { useXp } from './hooks/useXp';
 import { useQuotes } from './hooks/useQuotes';
 import { useReflect } from './hooks/useReflect';
 import { useMindGame } from './hooks/useMindGame';
+import { setBackHandler } from './native/backButton';
 import type { ScreenId } from './types';
 
 export default function MyWorldApp() {
@@ -32,6 +33,18 @@ export default function MyWorldApp() {
   const game = useMindGame(store, awardGameXp);
 
   const goHome = useCallback(() => setScreen('home'), []);
+
+  useEffect(() => {
+    // On Android the back button goes back to the home screen first and only
+    // closes the app from there.
+    setBackHandler(() => {
+      if (screen === 'home') return false;
+      setScreen('home');
+      return true;
+    });
+
+    return () => setBackHandler(null);
+  }, [screen]);
 
   return (
     <>

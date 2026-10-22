@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The app background, used by the launch window and the WebView. -->
+    <color name="appBackground">#12121f</color>
+    <!-- Launcher icon colours, taken from the web design. -->
+    <color name="ic_launcher_background">#1a1a2e</color>
+    <color name="icLauncherLavender">#c4b5fd</color>
+    <color name="icLauncherLavenderDeep">#a78bfa</color>
+    <color name="icLauncherGold">#fcd34d</color>
+</resources>

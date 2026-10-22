@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Launch window background. The app is dark, so the launch window is the app
+    background colour instead of the default white splash image.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/appBackground" />
+</layer-list>

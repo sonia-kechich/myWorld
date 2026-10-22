@@ -60,7 +60,7 @@ describe('vault store', () => {
   it('refuses to open a record that was moved to another id', async () => {
     await store.put('quote', 'quote:1', { id: 1 });
 
-    const record = await getRecord('quote:1');
+    const record = await getRecord('quote', 'quote:1');
     expect(record).not.toBeNull();
 
     const db = await openDatabase();
@@ -77,7 +77,7 @@ describe('vault store', () => {
     await store.put('quote', 'quote:1', { id: 1 });
     await store.put('quote', 'quote:2', { id: 2 });
 
-    const record = await getRecord('quote:1');
+    const record = await getRecord('quote', 'quote:1');
     expect(record).not.toBeNull();
 
     const bytes = base64ToBytes(record?.envelope.ct ?? '');
@@ -96,11 +96,11 @@ describe('vault store', () => {
 
   it('keeps the creation time of a record it overwrites', async () => {
     await store.put('quote', 'quote:1', { id: 1, text: 'first' });
-    const first = await getRecord('quote:1');
+    const first = await getRecord('quote', 'quote:1');
 
     await new Promise((resolve) => setTimeout(resolve, 5));
     await store.put('quote', 'quote:1', { id: 1, text: 'second' });
-    const second = await getRecord('quote:1');
+    const second = await getRecord('quote', 'quote:1');
 
     expect(second?.createdAt).toBe(first?.createdAt);
     expect(second?.updatedAt).toBeGreaterThanOrEqual(first?.updatedAt ?? 0);

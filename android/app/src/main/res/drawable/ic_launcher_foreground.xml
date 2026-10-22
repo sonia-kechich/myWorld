@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Launcher icon foreground layer: a crescent moon and two stars, drawn in the
+    lavender and gold of the app. Everything stays inside the middle 72dp of
+    the 108dp canvas, which is the part every launcher mask keeps visible.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillType="evenOdd"
+        android:pathData="M23,56 a25,25 0 1,0 50,0 a25,25 0 1,0 -50,0 M34,49 a23,23 0 1,0 46,0 a23,23 0 1,0 -46,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="26"
+                android:startY="34"
+                android:endX="70"
+                android:endY="78">
+                <item android:color="#e9d5ff" android:offset="0" />
+                <item android:color="#c4b5fd" android:offset="0.5" />
+                <item android:color="#a78bfa" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <path
+        android:fillColor="#fcd34d"
+        android:pathData="M71,30 Q71.7,39.3 81,40 Q71.7,40.7 71,50 Q70.3,40.7 61,40 Q70.3,39.3 71,30 Z" />
+
+    <path
+        android:fillColor="#f5f3ff"
+        android:fillAlpha="0.92"
+        android:pathData="M33,33 Q33.4,36.6 37,37 Q33.4,37.4 33,41 Q32.6,37.4 29,37 Q32.6,36.6 33,33 Z" />
+
+    <path
+        android:fillColor="#7dd3fc"
+        android:fillAlpha="0.85"
+        android:pathData="M75,63 Q75.3,65.7 78,66 Q75.3,66.3 75,69 Q74.7,66.3 72,66 Q74.7,65.7 75,63 Z" />
+</vector>
